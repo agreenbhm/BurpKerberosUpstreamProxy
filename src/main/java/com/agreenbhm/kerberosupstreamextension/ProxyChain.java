@@ -26,7 +26,7 @@ public class ProxyChain {
         @Override
         public InetSocketAddress getChainedProxyAddress() {
             // Address of the external proxy
-            return new InetSocketAddress("127.0.0.1", upstreamProxyPortInt);
+            return new InetSocketAddress(upstreamProxyHost, upstreamProxyPortInt);
         }
 
         public void onCommunicationError(Throwable t) {
