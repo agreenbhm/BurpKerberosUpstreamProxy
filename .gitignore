@@ -4,4 +4,4 @@
 /target
 .DS_Store
 /build
-!/build/libs
+!/build/libs/*.jar
