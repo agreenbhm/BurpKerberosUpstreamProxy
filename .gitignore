@@ -3,3 +3,5 @@
 /.vscode
 /target
 .DS_Store
+/build
+!/build/libs

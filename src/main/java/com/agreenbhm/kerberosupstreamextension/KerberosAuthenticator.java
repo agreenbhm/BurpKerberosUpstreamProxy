@@ -48,7 +48,7 @@ public class KerberosAuthenticator {
 
     private boolean initializeSubject() {
 
-        CreateKrb5Conf.CreateKrb5Conf(this.krb5conf);
+        new CreateKrb5Conf(this.krb5conf);
 
         System.setProperty("java.security.krb5.realm", this.realm);
         System.setProperty("java.security.krb5.kdc", this.kdc);

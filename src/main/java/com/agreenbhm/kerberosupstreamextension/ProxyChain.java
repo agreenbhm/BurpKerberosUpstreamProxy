@@ -7,10 +7,13 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpObject;
 
 import java.net.InetSocketAddress;
+import java.util.Base64;
 
 import javax.net.ssl.SSLEngine;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders;
 
 public class ProxyChain {
@@ -21,6 +24,8 @@ public class ProxyChain {
     int localProxyPortInt;
     String upstreamProxyHost;
     boolean isStarted = false;
+    boolean requireLocalAuth;
+    String localAuthValue;
 
     private class MyChainedProxy implements ChainedProxy {
         @Override
@@ -29,9 +34,9 @@ public class ProxyChain {
             return new InetSocketAddress(upstreamProxyHost, upstreamProxyPortInt);
         }
 
-        public void onCommunicationError(Throwable t) {
-            // Handle communication errors here
-        }
+        // public void onCommunicationError(Throwable t) {
+        // // Handle communication errors here
+        // }
 
         @Override
         public SSLEngine newSslEngine() {
@@ -97,11 +102,14 @@ public class ProxyChain {
                 .withChainProxyManager((httpRequest, chainedProxies) -> {
                     chainedProxies.add(new MyChainedProxy());
                 })
-                .withFiltersSource(new RequestModifierHttpFiltersSource(this.authenticator))
+                .withFiltersSource(
+                        new RequestModifierHttpFiltersSource(this.authenticator, this.requireLocalAuth,
+                                this.localAuthValue))
                 .start();
         this.isStarted = true;
         System.out.println("Local proxy listening 127.0.0.1:" + Integer.toString(localProxyPortInt) +
-             ", forwarding to upstream proxy on " + upstreamProxyHost + ":" + Integer.toString(upstreamProxyPortInt));
+                ", forwarding to upstream proxy on " + upstreamProxyHost + ":"
+                + Integer.toString(upstreamProxyPortInt));
 
     }
 
@@ -111,12 +119,16 @@ public class ProxyChain {
     }
 
     private static class RequestModifierHttpFilters extends HttpFiltersAdapter {
-        private final KerberosAuthenticator authenticator; // Add a field to store the token
+        private final KerberosAuthenticator authenticator;
+        private final boolean useLocalAuth;
+        private final String localAuthValue;
 
         public RequestModifierHttpFilters(HttpRequest originalRequest, ChannelHandlerContext ctx,
-                KerberosAuthenticator authenticator) {
+                KerberosAuthenticator authenticator, boolean useLocalAuth, String localAuthValue) {
             super(originalRequest, ctx);
             this.authenticator = authenticator;
+            this.useLocalAuth = useLocalAuth;
+            this.localAuthValue = localAuthValue;
         }
 
         @Override
@@ -132,18 +144,47 @@ public class ProxyChain {
             return null; // returning null means continue processing
         }
 
+        @Override
+        public HttpResponse clientToProxyRequest(HttpObject httpObject) {
+            if (httpObject instanceof HttpRequest) {
+                HttpRequest request = (HttpRequest) httpObject;
+                HttpHeaders headers = request.headers();
+                if (this.useLocalAuth) {
+                    if (headers.contains("Proxy-Authorization")) {
+                        if (new String(Base64.getDecoder().decode(headers.get("Proxy-Authorization").split(" ")[1])).split(":")[1]
+                                .equals(this.localAuthValue)) {
+                            headers.remove("Proxy-Authorization");
+                            return null; // returning null means continue processing
+                        }
+                    }
+                    HttpResponse response = new DefaultHttpResponse(request.protocolVersion(),
+                            new HttpResponseStatus(407,
+                                    "Local Proxy Basic Authentication Required; Set it within Burp's 'Upstream Proxy' settings"));
+                    response.headers().set("Connection", "close");
+                    return response;
+                }
+            }
+            return null; // returning null means continue processing
+        }
+
     }
 
     private static class RequestModifierHttpFiltersSource extends HttpFiltersSourceAdapter {
-        private final KerberosAuthenticator authenticator; // Add a field to store the token
+        private final KerberosAuthenticator authenticator;
+        private final boolean useLocalAuth;
+        private final String localAuthValue;
 
-        public RequestModifierHttpFiltersSource(KerberosAuthenticator authenticator) {
-            this.authenticator = authenticator; // Initialize the token
+        public RequestModifierHttpFiltersSource(KerberosAuthenticator authenticator, boolean useLocalAuth,
+                String localAuthValue) {
+            this.authenticator = authenticator;
+            this.useLocalAuth = useLocalAuth;
+            this.localAuthValue = localAuthValue;
         }
 
         @Override
         public HttpFilters filterRequest(HttpRequest originalRequest, ChannelHandlerContext ctx) {
-            return new RequestModifierHttpFilters(originalRequest, ctx, this.authenticator);
+            return new RequestModifierHttpFilters(originalRequest, ctx, this.authenticator, this.useLocalAuth,
+                    this.localAuthValue);
         }
 
         @Override
