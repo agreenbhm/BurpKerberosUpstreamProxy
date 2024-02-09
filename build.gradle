@@ -14,14 +14,15 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'net.portswigger.burp.extensions:montoya-api:+'
-    api(libs.org.apache.httpcomponents.httpclient)
-    api(libs.org.littleshoot.littleproxy)
-    api(libs.io.netty.netty.all)
+    compileOnly('net.portswigger.burp.extensions:montoya-api:+')
+    implementation(libs.org.apache.httpcomponents.httpclient)
+    implementation(libs.org.littleshoot.littleproxy)
+    implementation(libs.io.netty.netty.all)
+    implementation('commons-cli:commons-cli:+')
 }
 
 group = 'com.agreenbhm'
-version = '1.0-SNAPSHOT'
+version = '1.1-SNAPSHOT'
 description = 'burpkerberosextension'
 java.sourceCompatibility = JavaVersion.VERSION_17
 
@@ -38,5 +39,10 @@ jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    manifest {
+        attributes(
+                'Main-Class': 'com.agreenbhm.kerberosupstreamextension.KerberosUpstreamStandalone'
+        )
     }
 }

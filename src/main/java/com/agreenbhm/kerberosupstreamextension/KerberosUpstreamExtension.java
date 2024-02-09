@@ -33,23 +33,9 @@ public class KerberosUpstreamExtension implements BurpExtension {
     private Extension extension;
     private ProxyChain proxyChain;
     private KerberosAuthenticator authenticator;
-    private boolean debugBuild = true;
+    private static boolean debugBuild = false;
     private boolean debug = false;
 
-    public static void main(String[] args) {
-        System.setProperty("java.net.preferIPv4Stack", "true");
-        KerberosAuthenticator authenticator = new KerberosAuthenticator("administrator",
-                "P@$$w0rd".toCharArray(), "LAB.LOCAL", "dc.lab.local", "squid.lab.local", "/etc/krb5.conf");
-        if (!authenticator.isInitialized) {
-            System.out.println("Authenticator not initialized");
-            return;
-        }
-        ProxyChain proxyChain = new ProxyChain();
-        proxyChain.upstreamProxyPortInt = 3128;
-        proxyChain.localProxyPortInt = 8000;
-        proxyChain.upstreamProxyHost = "squid.lab.local";
-        proxyChain.start(authenticator);
-    }
 
     @Override
     public void initialize(MontoyaApi initializeAPI) {
@@ -60,7 +46,7 @@ public class KerberosUpstreamExtension implements BurpExtension {
         extension.setName("KerberosUpstreamExtension");
         extension.registerUnloadingHandler(new MyExtensionUnloadingHandler());
         userInterface = api.userInterface();
-        
+
         PersistedObject savedExtensionData = api.persistence().extensionData();
 
         userInterface.registerSuiteTab("Kerberos Upstream Proxy", new KerberosUpstreamExtensionTab(savedExtensionData));
@@ -189,10 +175,10 @@ public class KerberosUpstreamExtension implements BurpExtension {
             if (savedExtensionData.getString("USERNAME") != null) {
                 usernameField.setText(savedExtensionData.getString("USERNAME"));
             }
-            if(savedExtensionData.getBoolean("USE_SECURE_HEADER") != null){
+            if (savedExtensionData.getBoolean("USE_SECURE_HEADER") != null) {
                 requireLocalAuthCheckBox.setSelected(savedExtensionData.getBoolean("USE_SECURE_HEADER"));
             }
-            if(savedExtensionData.getString("SECURE_HEADER_STRING") != null){
+            if (savedExtensionData.getString("SECURE_HEADER_STRING") != null) {
                 localAuthValueField.setText(savedExtensionData.getString("SECURE_HEADER_STRING"));
             }
 
@@ -223,17 +209,21 @@ public class KerberosUpstreamExtension implements BurpExtension {
                         String realm = realmField.getText();
                         String kdc = kdcField.getText();
                         String upstreamProxyHost = upstreamProxyHostField.getText();
-                        int upstreamProxyPortInt = upstreamProxyPortField.getText().isEmpty() ? 0 : Integer.parseInt(upstreamProxyPortField.getText());
-                        int localProxyPortInt = localProxyPorTextField.getText().isEmpty() ? 0 : Integer.parseInt(localProxyPorTextField.getText());
+                        int upstreamProxyPortInt = upstreamProxyPortField.getText().isEmpty() ? 0
+                                : Integer.parseInt(upstreamProxyPortField.getText());
+                        int localProxyPortInt = localProxyPorTextField.getText().isEmpty() ? 0
+                                : Integer.parseInt(localProxyPorTextField.getText());
                         String krb5conf = krb5ConfField.getText();
                         boolean requireLocalAuth = requireLocalAuthCheckBox.isSelected();
                         String localAuthValue = localAuthValueField.getText();
 
-                        if(username.isEmpty() || password.length == 0 || realm.isEmpty() || kdc.isEmpty() || upstreamProxyHost.isEmpty() || krb5conf.isEmpty() || (requireLocalAuth && localAuthValue.isEmpty())) {
+                        if (username.isEmpty() || password.length == 0 || realm.isEmpty() || kdc.isEmpty()
+                                || upstreamProxyHost.isEmpty() || krb5conf.isEmpty()
+                                || (requireLocalAuth && localAuthValue.isEmpty())) {
                             statusField.setText("Error: Missing required fields");
                             return null;
                         }
-                        
+
                         startProxyButton.setEnabled(false);
                         stopProxyButton.setEnabled(false);
 
@@ -256,7 +246,6 @@ public class KerberosUpstreamExtension implements BurpExtension {
                             proxyChain.start(authenticator);
                             statusField.setText("Proxy Started");
 
- 
                         } catch (Exception ex) {
                             logging.logToOutput("Error: " + ex.getMessage());
                             statusField.setText("Error: " + ex.getMessage());
@@ -414,7 +403,7 @@ public class KerberosUpstreamExtension implements BurpExtension {
                             localAuthValueField.setEnabled(false);
                             localAuthValueField.setText(RandomStringGenerator.generateSecureHeaderString());
 
-                            if(debug){
+                            if (debug) {
                                 realmField.setText("LAB.LOCAL");
                                 kdcField.setText("dc.lab.local");
                                 upstreamProxyHostField.setText("squid.lab.local");
@@ -450,9 +439,9 @@ public class KerberosUpstreamExtension implements BurpExtension {
             debugCheckBox.addActionListener(e -> {
                 debug = debugCheckBox.isSelected();
             });
-            if(debugBuild){
+            if (debugBuild) {
                 add(debugCheckBox, c);
-                if(debug){
+                if (debug) {
                     debugCheckBox.setSelected(true);
                 }
             }
