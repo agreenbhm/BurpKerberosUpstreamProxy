@@ -26,27 +26,31 @@ public class ProxyChain {
     boolean isStarted = false;
     boolean requireLocalAuth;
     String localAuthValue;
+    ExtensionLogging extensionLogging;
+    
+    public ProxyChain(ExtensionLogging extensionLogging) {
+        this.extensionLogging = extensionLogging;
+    }
 
     private class MyChainedProxy implements ChainedProxy {
         @Override
         public InetSocketAddress getChainedProxyAddress() {
             // Address of the external proxy
+            //extensionLogging.logToOutput("Creating chained proxy to " + upstreamProxyHost + ":"
+            //        + Integer.toString(upstreamProxyPortInt));
             return new InetSocketAddress(upstreamProxyHost, upstreamProxyPortInt);
         }
-
-        // public void onCommunicationError(Throwable t) {
-        // // Handle communication errors here
-        // }
-
         @Override
         public SSLEngine newSslEngine() {
             // Optional: Implement if SSL support is needed
+            extensionLogging.logToError("SSL engine not implemented");
             throw new UnsupportedOperationException("SSL engine not implemented");
         }
 
         @Override
         public SSLEngine newSslEngine(String peerHost, int peerPort) {
             // Optional: Implement if SSL support is needed for specific host and port
+            extensionLogging.logToError("SSL engine for specific host not implemented");
             throw new UnsupportedOperationException("SSL engine for specific host not implemented");
         }
 
@@ -75,16 +79,19 @@ public class ProxyChain {
 
         @Override
         public void connectionSucceeded() {
+            //extensionLogging.logToOutput("Connected to upstream proxy");
             // Optional: Implement to handle successful connection events
         }
 
         @Override
         public void connectionFailed(Throwable cause) {
+            extensionLogging.logToError("Connection failed: " + cause.getMessage());
             // Optional: Implement to handle connection failure events
         }
 
         @Override
         public void disconnected() {
+            //extensionLogging.logToOutput("Disconnected from upstream proxy");
             // Optional: Implement to handle disconnection events
         }
 
@@ -107,7 +114,7 @@ public class ProxyChain {
                                 this.localAuthValue))
                 .start();
         this.isStarted = true;
-        System.out.println("Local proxy listening 127.0.0.1:" + Integer.toString(localProxyPortInt) +
+        extensionLogging.logToOutput("Local proxy listening 127.0.0.1:" + Integer.toString(localProxyPortInt) +
                 ", forwarding to upstream proxy on " + upstreamProxyHost + ":"
                 + Integer.toString(upstreamProxyPortInt));
 
@@ -116,6 +123,7 @@ public class ProxyChain {
     public void stop() {
         this.firstProxy.abort();
         this.isStarted = false;
+        //extensionLogging.logToOutput("Local proxy stopped");
     }
 
     private static class RequestModifierHttpFilters extends HttpFiltersAdapter {
@@ -190,13 +198,13 @@ public class ProxyChain {
         @Override
         public int getMaximumRequestBufferSizeInBytes() {
             // Increase if you need to inspect large requests
-            return 10 * 1024 * 1024; // 10 MB
+            return 1024 * 1024 * 1024; // 1 GB
         }
 
         @Override
         public int getMaximumResponseBufferSizeInBytes() {
             // Increase if you need to inspect large responses
-            return 10 * 1024 * 1024; // 10 MB
+            return 1024 * 1024 * 1024; // 1 GB
         }
     }
 

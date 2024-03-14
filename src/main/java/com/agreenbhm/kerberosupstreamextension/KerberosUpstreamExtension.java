@@ -35,6 +35,7 @@ public class KerberosUpstreamExtension implements BurpExtension {
     private KerberosAuthenticator authenticator;
     private static boolean debugBuild = false;
     private boolean debug = false;
+    private ExtensionLogging extensionLogging;
 
 
     @Override
@@ -42,6 +43,7 @@ public class KerberosUpstreamExtension implements BurpExtension {
         System.setProperty("java.net.preferIPv4Stack", "true");
         api = initializeAPI;
         logging = api.logging();
+        extensionLogging = new ExtensionLogging(api.logging());
         extension = api.extension();
         extension.setName("KerberosUpstreamExtension");
         extension.registerUnloadingHandler(new MyExtensionUnloadingHandler());
@@ -50,8 +52,7 @@ public class KerberosUpstreamExtension implements BurpExtension {
         PersistedObject savedExtensionData = api.persistence().extensionData();
 
         userInterface.registerSuiteTab("Kerberos Upstream Proxy", new KerberosUpstreamExtensionTab(savedExtensionData));
-
-        logging.logToOutput("KerberosUpstreamExtension initialized");
+        extensionLogging.logToOutput("KerberosUpstreamExtension initialized");
     }
 
     private class MyExtensionUnloadingHandler implements ExtensionUnloadingHandler {
@@ -60,7 +61,7 @@ public class KerberosUpstreamExtension implements BurpExtension {
             if (proxyChain != null) {
                 proxyChain.stop();
             }
-            logging.logToOutput("Extension was unloaded.");
+            extensionLogging.logToOutput("Extension was unloaded.");
         }
     }
 
@@ -230,13 +231,13 @@ public class KerberosUpstreamExtension implements BurpExtension {
                         statusField.setText("Authenticating...");
                         try {
                             authenticator = new KerberosAuthenticator(username, password, realm, kdc, upstreamProxyHost,
-                                    krb5conf);
+                                    krb5conf, extensionLogging);
                             if (!authenticator.isInitialized) {
                                 statusField.setText("Error: Authenticator not initialized");
                                 return null;
                             }
                             statusField.setText("Authenticated; Creating Proxy Chain...");
-                            proxyChain = new ProxyChain();
+                            proxyChain = new ProxyChain(extensionLogging);
                             proxyChain.upstreamProxyPortInt = upstreamProxyPortInt;
                             proxyChain.localProxyPortInt = localProxyPortInt;
                             proxyChain.upstreamProxyHost = upstreamProxyHost;
@@ -247,7 +248,7 @@ public class KerberosUpstreamExtension implements BurpExtension {
                             statusField.setText("Proxy Started");
 
                         } catch (Exception ex) {
-                            logging.logToOutput("Error: " + ex.getMessage());
+                            extensionLogging.logToError("Error: " + ex.getMessage());
                             statusField.setText("Error: " + ex.getMessage());
 
                         }
@@ -299,7 +300,7 @@ public class KerberosUpstreamExtension implements BurpExtension {
                             proxyChain.stop();
                             statusField.setText("Proxy Stopped");
                         } catch (Exception ex) {
-                            logging.logToOutput("Error: " + ex.getMessage());
+                            extensionLogging.logToOutput("Error: " + ex.getMessage());
                             statusField.setText("Error: " + ex.getMessage());
                         }
                         return null;
@@ -358,7 +359,7 @@ public class KerberosUpstreamExtension implements BurpExtension {
                             savedExtensionData.setString("SECURE_HEADER_STRING", localAuthValueField.getText());
 
                         } catch (Exception ex) {
-                            logging.logToOutput("Error: " + ex.getMessage());
+                            extensionLogging.logToError("Error: " + ex.getMessage());
                             statusField.setText("Error saving settings");
                         }
                         return null;
@@ -419,7 +420,7 @@ public class KerberosUpstreamExtension implements BurpExtension {
                             }
 
                         } catch (Exception ex) {
-                            logging.logToOutput("Error: " + ex.getMessage());
+                            extensionLogging.logToError("Error: " + ex.getMessage());
                             statusField.setText("Error clearing settings");
                         }
                         return null;

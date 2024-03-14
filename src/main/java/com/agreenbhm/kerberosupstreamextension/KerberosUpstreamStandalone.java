@@ -1,40 +1,15 @@
 package com.agreenbhm.kerberosupstreamextension;
 
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JTextField;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
-import javax.swing.SwingWorker;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-
-import burp.api.montoya.BurpExtension;
-import burp.api.montoya.MontoyaApi;
-import burp.api.montoya.extension.Extension;
-import burp.api.montoya.core.Registration;
-
-import burp.api.montoya.extension.ExtensionUnloadingHandler;
-import burp.api.montoya.logging.Logging;
-import burp.api.montoya.ui.UserInterface;
-import burp.api.montoya.persistence.PersistedObject;
-
-import java.security.SecureRandom;
-import java.util.Random;
-import java.util.stream.Collectors;
-
 import org.apache.commons.cli.*;
 
 public class KerberosUpstreamStandalone {
 
-    private ProxyChain proxyChain;
-    private KerberosAuthenticator authenticator;
     private static boolean debugBuild = false;
 
     public static void main(String[] args) {
         System.setProperty("java.net.preferIPv4Stack", "true");
         KerberosAuthenticator authenticator;
+        ExtensionLogging extensionLogging = new ExtensionLogging();
 
         Options options = new Options();
         CommandLineParser parser = new DefaultParser();
@@ -43,7 +18,7 @@ public class KerberosUpstreamStandalone {
 
         if (debugBuild) {
             authenticator = new KerberosAuthenticator("administrator",
-                    "P@$$w0rd".toCharArray(), "LAB.LOCAL", "dc.lab.local", "squid.lab.local", "/etc/krb5.conf");
+                    "P@$$w0rd".toCharArray(), "LAB.LOCAL", "dc.lab.local", "squid.lab.local", "/etc/krb5.conf", extensionLogging);
         } else {
 
             options.addOption(Option.builder("u").longOpt("username").required(true).hasArg().desc("Username").build());
@@ -62,9 +37,9 @@ public class KerberosUpstreamStandalone {
                 authenticator = new KerberosAuthenticator(cmd.getOptionValue("username"),
                         cmd.getOptionValue("password").toCharArray(),
                         cmd.getOptionValue("realm"), cmd.getOptionValue("kdc"), cmd.getOptionValue("upstream-proxy"),
-                        cmd.getOptionValue("krb5-conf"));
+                        cmd.getOptionValue("krb5-conf"), extensionLogging);
             } catch (ParseException e) {
-                System.out.println(e.getMessage());
+                extensionLogging.logToError(e.getMessage());
                 formatter.printHelp("KerberosUpstreamExtension", options);
                 System.exit(1);
                 return;
@@ -73,12 +48,12 @@ public class KerberosUpstreamStandalone {
         }
 
         if (!authenticator.isInitialized) {
-            System.out.println("Error: Authenticator not initialized");
+            extensionLogging.logToError("Error: Authenticator not initialized");
             System.exit(1);
             return;
         }
 
-        ProxyChain proxyChain = new ProxyChain();
+        ProxyChain proxyChain = new ProxyChain(extensionLogging);
         if (debugBuild) {
             proxyChain.upstreamProxyPortInt = 3128;
             proxyChain.localProxyPortInt = 8000;
@@ -92,7 +67,7 @@ public class KerberosUpstreamStandalone {
                     proxyChain.requireLocalAuth = true;
                     proxyChain.localAuthValue = cmd.getOptionValue("v");
                 }else if(cmd.hasOption("a") && (!cmd.hasOption("v") || cmd.getOptionValue("v").isBlank())){
-                    System.out.println("Error: Local Auth enabled but no Local Auth Value provided");
+                    extensionLogging.logToError("Error: Local Auth enabled but no Local Auth Value provided");
                     System.exit(1);
                     return;
                 }

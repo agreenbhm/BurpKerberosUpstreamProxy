@@ -30,15 +30,17 @@ public class KerberosAuthenticator {
     private String upstreamProxyHost;
     private String krb5conf;
     public boolean isInitialized = false;
+    private ExtensionLogging extensionLogging;
 
     public KerberosAuthenticator(String username, char[] password, String realm, String kdc, String upstreamProxyHost,
-            String krb5conf) {
+            String krb5conf, ExtensionLogging extensionLogging) {
         this.username = username;
         this.password = password;
         this.realm = realm;
         this.kdc = kdc;
         this.upstreamProxyHost = upstreamProxyHost;
         this.krb5conf = krb5conf;
+        this.extensionLogging = extensionLogging;
 
         this.isInitialized = initializeSubject();
         if (this.isInitialized) {
@@ -48,7 +50,7 @@ public class KerberosAuthenticator {
 
     private boolean initializeSubject() {
 
-        new CreateKrb5Conf(this.krb5conf);
+        new CreateKrb5Conf(this.krb5conf, this.extensionLogging);
 
         System.setProperty("java.security.krb5.realm", this.realm);
         System.setProperty("java.security.krb5.kdc", this.kdc);
@@ -91,7 +93,7 @@ public class KerberosAuthenticator {
             subject = lc.getSubject();
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            extensionLogging.logToError(e.getMessage());
         }
 
         return false;
@@ -110,7 +112,7 @@ public class KerberosAuthenticator {
 
             return Base64.getEncoder().encodeToString(newToken);
         } catch (Exception e) {
-            e.printStackTrace();
+            extensionLogging.logToError(e.getMessage());
             // Handle exception appropriately
             return null;
         }
