@@ -58,8 +58,8 @@ public class KerberosUpstreamStandalone {
         ProxyChain proxyChain = new ProxyChain(extensionLogging);
         if (debugBuild) {
             proxyChain.upstreamProxyPortInt = 3128;
-            proxyChain.localProxyPortInt = 8000;
             proxyChain.upstreamProxyHost = "squid.lab.local";
+            proxyChain.localProxySocket = new InetSocketAddress("127.0.0.1", 8000);
         }else{
             if (cmd != null) {
                 proxyChain.upstreamProxyHost = cmd.getOptionValue("upstream-proxy");

@@ -14,16 +14,15 @@ repositories {
 }
 
 dependencies {
-    //compileOnly('net.portswigger.burp.extensions:montoya-api:+')
-    compileOnly('net.portswigger.burp.extensions:montoya-api:1.0.0')
+    compileOnly('net.portswigger.burp.extensions:montoya-api:1.0.0+')
     implementation(libs.org.apache.httpcomponents.httpclient)
     implementation(libs.org.littleshoot.littleproxy)
     implementation(libs.io.netty.netty.all)
-    implementation('commons-cli:commons-cli:+')
+    implementation('commons-cli:commons-cli:1.6.0+')
 }
 
 group = 'com.agreenbhm'
-version = '1.2-SNAPSHOT'
+version = '1.3-SNAPSHOT'
 description = 'burpkerberosextension'
 java.sourceCompatibility = JavaVersion.VERSION_17
 

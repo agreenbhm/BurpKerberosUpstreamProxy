@@ -21,7 +21,6 @@ public class ProxyChain {
     private KerberosAuthenticator authenticator;
     private HttpProxyServer firstProxy;
     int upstreamProxyPortInt;
-    int localProxyPortInt;
     InetSocketAddress localProxySocket;
     String upstreamProxyHost;
     boolean isStarted = false;

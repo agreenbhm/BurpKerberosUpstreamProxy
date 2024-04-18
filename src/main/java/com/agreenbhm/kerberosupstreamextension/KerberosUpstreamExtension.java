@@ -23,6 +23,7 @@ import burp.api.montoya.persistence.PersistedObject;
 import java.security.SecureRandom;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.net.InetSocketAddress;
 
 
 public class KerberosUpstreamExtension implements BurpExtension {
@@ -239,7 +240,7 @@ public class KerberosUpstreamExtension implements BurpExtension {
                             statusField.setText("Authenticated; Creating Proxy Chain...");
                             proxyChain = new ProxyChain(extensionLogging);
                             proxyChain.upstreamProxyPortInt = upstreamProxyPortInt;
-                            proxyChain.localProxyPortInt = localProxyPortInt;
+                            proxyChain.localProxySocket = new InetSocketAddress("127.0.0.1", localProxyPortInt);
                             proxyChain.upstreamProxyHost = upstreamProxyHost;
                             proxyChain.requireLocalAuth = requireLocalAuth;
                             proxyChain.localAuthValue = localAuthValue;
