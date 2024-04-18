@@ -32,6 +32,7 @@ An extension to allow the use of Burp Suite with an upstream proxy that requires
 0. Build JAR or use pre-compiled from `build/libs/*.jar`
 1. Launch via CLI as `java -jar <jar-file>.jar -h` to show help, then re-run with necessary arguments.  "Require Local Auth" and "Local Auth Value" are optional.
 2. If using local auth, ensure Proxy-Authorization is being sent with whatever tool you're using.  For curl, you'd use the `--proxy-user username:password` argument.
+3. When using as a standalone tool you can specify the IP to listen on (including 0.0.0.0).  If you don't specify an IP it'll default to localhost.
 
 ## How it works
 1. Using the settings you provide, this extension obtains a Kerberos TGT token and starts a proxy running locally.
