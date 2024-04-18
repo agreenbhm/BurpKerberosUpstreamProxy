@@ -1,6 +1,7 @@
 package com.agreenbhm.kerberosupstreamextension;
 
 import org.apache.commons.cli.*;
+import java.net.InetSocketAddress;
 
 public class KerberosUpstreamStandalone {
 
@@ -28,6 +29,7 @@ public class KerberosUpstreamStandalone {
             options.addOption(Option.builder("h").longOpt("upstream-proxy").required(true).hasArg().desc("Upstream Proxy Host").build());
             options.addOption(Option.builder("i").longOpt("upstream-proxy-port").required(true).hasArg().desc("Upstream Proxy Port").build());
             options.addOption(Option.builder("l").longOpt("local-proxy-port").required(true).hasArg().desc("Local Proxy Port").build());
+            options.addOption(Option.builder("s").longOpt("local-proxy-ip").required(false).hasArg().desc("Local Proxy IP").build());
             options.addOption(Option.builder("c").longOpt("krb5-conf").required(true).hasArg().desc("krb5.conf Path").build());
             options.addOption(Option.builder("a").longOpt("require-local-auth").required(false).desc("Require Local Auth").build());
             options.addOption(Option.builder("v").longOpt("local-auth-value").required(false).hasArg().desc("Local Auth Value").build());
@@ -62,7 +64,11 @@ public class KerberosUpstreamStandalone {
             if (cmd != null) {
                 proxyChain.upstreamProxyHost = cmd.getOptionValue("upstream-proxy");
                 proxyChain.upstreamProxyPortInt = Integer.parseInt(cmd.getOptionValue("upstream-proxy-port"));
-                proxyChain.localProxyPortInt = Integer.parseInt(cmd.getOptionValue("local-proxy-port"));
+                if(cmd.hasOption("s") && !cmd.getOptionValue("s").isBlank()){
+                    proxyChain.localProxySocket = new InetSocketAddress(cmd.getOptionValue("local-proxy-ip"), Integer.parseInt(cmd.getOptionValue("local-proxy-port")));
+                }else{
+                    proxyChain.localProxySocket = new InetSocketAddress("127.0.0.1", Integer.parseInt(cmd.getOptionValue("local-proxy-port")));
+                }
                 if(cmd.hasOption("a") && cmd.hasOption("v") && !cmd.getOptionValue("v").isBlank()){
                     proxyChain.requireLocalAuth = true;
                     proxyChain.localAuthValue = cmd.getOptionValue("v");

@@ -22,6 +22,7 @@ public class ProxyChain {
     private HttpProxyServer firstProxy;
     int upstreamProxyPortInt;
     int localProxyPortInt;
+    InetSocketAddress localProxySocket;
     String upstreamProxyHost;
     boolean isStarted = false;
     boolean requireLocalAuth;
@@ -105,7 +106,7 @@ public class ProxyChain {
 
         this.authenticator = authenticator;
         this.firstProxy = DefaultHttpProxyServer.bootstrap()
-                .withPort(localProxyPortInt) // Port for the first proxy
+                .withAddress(localProxySocket)
                 .withChainProxyManager((httpRequest, chainedProxies) -> {
                     chainedProxies.add(new MyChainedProxy());
                 })
@@ -114,7 +115,7 @@ public class ProxyChain {
                                 this.localAuthValue))
                 .start();
         this.isStarted = true;
-        extensionLogging.logToOutput("Local proxy listening 127.0.0.1:" + Integer.toString(localProxyPortInt) +
+        extensionLogging.logToOutput("Local proxy listening " + localProxySocket.toString() +
                 ", forwarding to upstream proxy on " + upstreamProxyHost + ":"
                 + Integer.toString(upstreamProxyPortInt));
 
