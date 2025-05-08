@@ -23,7 +23,7 @@ public class KerberosUpstreamStandalone {
         } else {
 
             options.addOption(Option.builder("u").longOpt("username").required(true).hasArg().desc("Username").build());
-            options.addOption(Option.builder("p").longOpt("password").required(true).hasArg().desc("Password").build());
+            options.addOption(Option.builder("p").longOpt("password").required(false).hasArg().desc("Password").build());
             options.addOption(Option.builder("r").longOpt("realm").required(true).hasArg().desc("Realm").build());
             options.addOption(Option.builder("k").longOpt("kdc").required(true).hasArg().desc("KDC").build());
             options.addOption(Option.builder("h").longOpt("upstream-proxy").required(true).hasArg().desc("Upstream Proxy Host").build());
@@ -36,6 +36,26 @@ public class KerberosUpstreamStandalone {
 
             try {
                 cmd = parser.parse(options, args);
+                
+                String password;
+                if (cmd.hasOption("password")) {
+                    password = cmd.getOptionValue("password");
+                } else {
+                    Console console = System.console();
+                    if (console == null) {
+                        extensionLogging.logToError("Error: No console available to prompt for password");
+                        System.exit(1);
+                        return;
+                    }
+                    char[] passwordArray = console.readPassword("Enter your password: ");
+                    if (passwordArray == null || passwordArray.length == 0) {
+                        extensionLogging.logToError("Error: Password is required but not provided");
+                        System.exit(1);
+                        return;
+                    }
+                    password = new String(passwordArray);
+                }
+                
                 authenticator = new KerberosAuthenticator(cmd.getOptionValue("username"),
                         cmd.getOptionValue("password").toCharArray(),
                         cmd.getOptionValue("realm"), cmd.getOptionValue("kdc"), cmd.getOptionValue("upstream-proxy"),
