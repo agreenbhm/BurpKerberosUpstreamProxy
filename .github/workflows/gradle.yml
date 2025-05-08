@@ -39,7 +39,7 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: JAR
+        name: BurpKerberosUpstreamProxy.jar
         path: build/libs/*.jar
 
   dependency-submission:
