@@ -41,7 +41,7 @@ public class KerberosUpstreamStandalone {
                 if (cmd.hasOption("password")) {
                     password = cmd.getOptionValue("password");
                 } else {
-                    Console console = System.console();
+                    java.io.Console console = System.console();
                     if (console == null) {
                         extensionLogging.logToError("Error: No console available to prompt for password");
                         System.exit(1);
@@ -57,7 +57,7 @@ public class KerberosUpstreamStandalone {
                 }
                 
                 authenticator = new KerberosAuthenticator(cmd.getOptionValue("username"),
-                        cmd.getOptionValue("password").toCharArray(),
+                        password.toCharArray(),
                         cmd.getOptionValue("realm"), cmd.getOptionValue("kdc"), cmd.getOptionValue("upstream-proxy"),
                         cmd.getOptionValue("krb5-conf"), extensionLogging);
             } catch (ParseException e) {
