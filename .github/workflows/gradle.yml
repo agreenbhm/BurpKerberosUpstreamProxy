@@ -40,8 +40,7 @@ jobs:
         name: BurpKerberosUpstreamProxy.jar
         path: build/libs/*.jar
 
-dependency-submission:
-
+  dependency-submission:
     runs-on: ubuntu-latest
     permissions:
       contents: write
